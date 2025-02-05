@@ -6,22 +6,48 @@
 ### **필수 과제 1번 - C++ Pawn 클래스와 충돌 컴포넌트 구성**
 
 - **컴포넌트 구성**
-    - Pawn 클래스를 생성하고 충돌 컴포넌트를 루트로 설정합니다 (Capsule/Box/Sphere 중 택 1).
-    - SkeletalMeshComponent, SpringArm, CameraComponent를 Pawn에 Attach하여 3인칭 시점을 만듭니다.
-    - `GameMode`에서 `DefaultPawnClass`를 생성한 Pawn 클래스로 설정합니다.
+     
+	<details>
+	<summary>세부 사항</summary>
+	
+	- Pawn 클래스를 생성하고 충돌 컴포넌트를 루트로 설정합니다 (Capsule/Box/Sphere 중 택 1).
+	- SkeletalMeshComponent, SpringArm, CameraComponent를 Pawn에 Attach하여 3인칭 시점을 만듭니다.
+	- `GameMode`에서 `DefaultPawnClass`를 생성한 Pawn 클래스로 설정합니다.
+	
+	</details>
+
 - **Physics 설정**
-    - Pawn 이동을 **직접** 코드로 제어하기 위해, **루트 충돌 컴포넌트 및 스켈레탈 메쉬의 물리 시뮬레이션 (Simulate Physics)을 비활성화해야 합니다.**
+  
+	<details>
+	<summary>세부 사항</summary>
+	
+	- Pawn 이동을 **직접** 코드로 제어하기 위해, **루트 충돌 컴포넌트 및 스켈레탈 메쉬의 물리 시뮬레이션 (Simulate Physics)을 비활성화해야 합니다.**
+	 
+	</details>
 
 ### **필수 과제 2번 - Enhanced Input 매핑 & 바인딩**
 
 - **Enhanced Input 매핑**
-    - WASD 키 입력, 마우스 회전을 Enhanced Input 액션으로 설정합니다.
-    - `SetupPlayerInputComponent()`에서 액션들을 바인딩합니다. `MoveForward`(W/S), `MoveRight`(A/D), `Look`(마우스 이동) 등의 함수를 구현해야 합니다.
+  
+	<details>
+	<summary>세부 사항</summary>
+	
+	- WASD 키 입력, 마우스 회전을 Enhanced Input 액션으로 설정합니다.
+	- `SetupPlayerInputComponent()`에서 액션들을 바인딩합니다. `MoveForward`(W/S), `MoveRight`(A/D), `Look`(마우스 이동) 등의 함수를 구현해야 합니다.
+	 
+	</details>
+
 - **이동/회전 로직 구현**
-    - 이동은 `AddActorLocalOffset()` 또는 `SetActorLocation()`을 통해 **직접** 구현합니다.
-    - 회전은 `AddActorLocalRotation()` 등을 통해 **직접** 구현합니다.
-    - 반드시 **Pawn 클래스 자체**에서 로직을 작성해야 합니다.
-    - **기본 중력이나 낙하 로직은 구현하지 않습니다**. 즉, **단순 평면 이동**만 수행하면 됩니다.
+
+	<details>
+	<summary>세부 사항</summary>
+	
+	- 이동은 `AddActorLocalOffset()` 또는 `SetActorLocation()`을 통해 **직접** 구현합니다.
+	- 회전은 `AddActorLocalRotation()` 등을 통해 **직접** 구현합니다.
+	- 반드시 **Pawn 클래스 자체**에서 로직을 작성해야 합니다.
+	- **기본 중력이나 낙하 로직은 구현하지 않습니다**. 즉, **단순 평면 이동**만 수행하면 됩니다.
+	 
+	</details>
 
 ---
 ## 도전 과제 (선택 요구 사항)
@@ -29,35 +55,58 @@
 ### **도전 과제 1번 - 6자유도 (6 DOF) 드론/비행체 구현 (난이도 상)**
 
 - **축 분할 액션 구현**
-    - 전/후 (Forward/Back): W(전진), S(후진)
-    - 좌/우 (Left/Right): A(좌측), D(우측)
-    - 상/하 (Up/Down): Space(상승), Shift(하강)
-    - Yaw 회전: 마우스 X
-    - Pitch 회전: 마우스 Y
-    - Roll 회전 (선택사항): Q/E 키 또는 마우스 휠 등 구현
-- **드론 (비행체)식 완전 자유 이동 구현**
-    - 단순히 ‘똑바로’ 전진하는 것이 아닙니다. 즉시 위치/회전을 처리하는 정도에 그치면, “디스플레이 상에서 XY 평면 + Z 회전”과 크게 다를 바가 없어 보입니다 (단지 축이 늘어난 정도).
-    - 즉, **“진짜 드론”** 느낌을 내고 싶다면, 단순 이동/회전 함수 호출을 넘어, **드론의 orientation (방향/기울기)을 입력으로 조정**하고, **그 orientation에 따라 전진/상승 방향이 달라지는** 구조를 만들어야 합니다.
-        - 앞으로 가려면 (Pitch를 살짝 숙이거나, Roll을 기울여) 기울어진 방향으로 전진
-        - 좌/우 이동도 Roll 또는 Yaw에 의해 방향이 달라질 수 있어야 합니다.
-        - “입력값 → 회전 각도/기울기 → 최종 위치” 흐름을 구현하게 됩니다.
-        - 즉, “이동 방향”과 “기울어진(회전된) 드론 방향”이 일치하도록 만들어야 비로소 ‘드론’ 같은 움직임이 납니다.
+
+	<details>
+	<summary>세부 사항</summary>
+	
+	- **이동**
+	    - 전/후 (W/S) - X축 이동
+	    - 좌/우 (A/D) - Y축 이동
+	    - 상/하 (Space/Shift) - Z축 이동
+	- **회전**
+	    - Yaw - 좌우 회전, 마우스 이동 (Z축 회전)
+	    - Pitch - 상화 회전, 마우스 이동 (Y축 회전)
+	    - Roll - 기울기 회전, 마우스 휠 (X축 회전)
+	 
+	</details>
+
+ - **Orientation 기반 이동 구현**
+
+	<details>
+	<summary>세부 사항</summary>
+	
+	- 단순 ‘평면 이동’이 아니라, *Pitch*나 *Roll* 각도를 기울여 전진·선회하는 식의 비행체 움직임 구현합니다.
+    	- AddActorOffset/Rotation 호출 전에 **현재 회전 상태** (방향·기울기)에 따라 입력 벡터를 변환하여 적용합니다.
+	 
+	</details>
 
 ### **도전 과제 2번 - 중력 및 낙하 구현 (난이도 최상)**
 
-- **Physics를 직접 활성화하지 말고**, Pawn 자체의 **Tick 로직**을 통해 낙하와 충돌을 처리합니다. (물리 시뮬레이션을 켜면 과제 의도와 어긋납니다.)
 - **인공 중력 구현**
-    - 엔진 내장 `CharacterMovementComponent` 없이, **Pawn 코드**에서 중력 가속도를 직접 계산해야 합니다. (낙하 속도는 적절한 중력 상수(예: -980 cm/s²) 기반으로 구현합니다.)
-    - 지면에 닿지 않는 동안 Pawn은 계속 낙하해야 합니다.
-    - CapsuleComponent의 바닥 부분으로 Sweep/Trace를 하거나, `AddActorOffset` 충돌 결과 등을 활용해 지면을 감지합니다.
-    - 착지하면 중력 적용을 중단 (또는 Z 속도를 0)해야 합니다.
-- **에어컨트롤 구현**
-    - 공중에서도 어느 정도 WASD 입력을 적용할 수 있게 해야 합니다.
-    - 단, 지상에서의 이동보다 **느리거나 제한적**이어야 합니다 (가령 30~50% 정도).
-    - “속도/가속도” 변수를 써서 이동 로직을 좀 더 자연스럽게 (=지상/공중) 구분하면 좋습니다.
+
+	<details>
+	<summary>세부 사항</summary>
+	
+	- **Physics 시뮬레이션 대신 Tick 로직**을 통해 인공 중력을 구현합니다.
+	- 엔진 내장 `CharacterMovementComponent` 없이, **Pawn 코드**에서 매 프레임 중력 가속도를 직접 계산해야 합니다. (낙하 속도는 적절한 중력 상수 (예: -980 cm/s²) 기반으로 구현합니다.)
+	- 바닥 충돌 판정을 해야합니다. (Sweep/Trace를 하거나, `AddActorOffset` 충돌 결과 등을 활용해 지면을 감지합니다.)
+	- 착지 시 낙하 중단 또는 Z 속도를 0으로 초기화해야 합니다.
+	 
+	</details> 
+
+- **에어컨트롤 구현 (공중 WASD 제어)**
+
+	<details>
+	<summary>세부 사항</summary>
+	
+	- 공중에서는 지상에서의 이동보다 **느리거나 제한적**이어야 합니다 (가령 30~50% 정도).
+	- 낙하와 착지가 시각적으로 자연스럽게 처리될 수 있도록, 속도/가속도 변수를 써서 이동 로직을 좀 더 자연스럽게 (=지상/공중) 구분하면 좋습니다.
+	 
+	</details>
 
 ---
 ---
+
 ## **구현 해야할 내용**
 
 ### **충돌 컴포넌트 구성**
@@ -328,6 +377,57 @@ void APlayerPawn::UpdateMove(float DeltaTime)
   - `AMainPawn::UpdateLook` 함수로 저장한 값을 기반으로 실제로 회전하는 로직을 구현한다.
       - 캐릭터와 드론 각 클래스에서 실제 회전 로직을 구현한다.
 
+- **캐릭터 회전 코드 예시**
+
+<details>
+<summary>AMainPawn::Look</summary>
+
+```cpp
+
+void AMainPawn::Look(const FInputActionValue& Value)
+{
+	FVector LookInput = Value.Get<FVector>();
+
+	AddRotator = FRotator(LookInput.Y * CameraSpeedY, LookInput.X * CameraSpeedX, LookInput.Z);
+}
+
+```
+
+</details>
+
+<details>
+<summary>APlayerPawn::UpdateLook</summary>
+
+```cpp
+
+void APlayerPawn::UpdateLook(float DeltaTime)
+{
+	if (!AddRotator.IsNearlyZero())
+	{
+		AddRotator *= (DeltaTime * 20.0f);
+
+		float AddedPitch = SpringArmComp->GetRelativeRotation().Pitch + AddRotator.Pitch;
+
+		// Pitch 회전 각도 제한
+		AddedPitch = FMath::Clamp(AddedPitch, -MaxPitchAngle, MaxPitchAngle);
+
+		// 카메라 상하 회전
+		SpringArmComp->SetRelativeRotation(FRotator(AddedPitch, 0.0f, 0.0f));
+
+		AddRotator.Pitch = 0.0f;
+
+		// 캐릭터 회전 및 카메라 좌우 회전
+		AddActorLocalRotation(AddRotator);
+	}
+
+	// 입력 없을시 회전 초기화 -> 회전 정지
+	AddRotator = FRotator::ZeroRotator;
+}
+
+```
+
+</details>
+
 ---
 
 ### **중력 및 낙하**
@@ -338,6 +438,26 @@ void APlayerPawn::UpdateMove(float DeltaTime)
 - 캐릭터의 경우 공중 이동 배율을 설정하고 적용하여 처음 점프했을 방향과 다른 방향으로 이동시 점차 감소된 이동속도로 이동 하도록 했다.
 
 
+- **중력 적용 코드 예시**
+<details>
+<summary>AMainPawn::UpdateGravity</summary>
+
+```cpp
+
+void AMainPawn::UpdateGravity(float DeltaTime)
+{
+	Velocity.Z += (Gravity * FMath::Pow(DeltaTime, 2));
+
+	// 추락 속도가 중력 가속도를 넘지 않도록 조정
+	if (Velocity.Z < Gravity)
+	{
+		Velocity.Z = Gravity;
+	}
+}
+
+```
+
+</details>
 
 
 
