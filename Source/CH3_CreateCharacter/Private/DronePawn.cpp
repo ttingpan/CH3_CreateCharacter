@@ -49,38 +49,28 @@ void ADronePawn::BeginPlay()
 	MyCollision = FCollisionShape::MakeBox(BoxComp->GetScaledBoxExtent());
 }
 
-void ADronePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void ADronePawn::SetupInputBinding(UEnhancedInputComponent* EnhancedInput, AMainPlayerController* PlayerController)
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-	// Enhanced InputComponent로 캐스팅
-	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent))
+	// 이동 바인딩
+	if (PlayerController->MoveFlyAction)
 	{
-		// IA를 가져오기 위해 현재 소유 중인 Controller를 ASpartaPlayerController로 캐스팅
-		if (AMainPlayerController* PlayerController = Cast<AMainPlayerController>(GetController()))
-		{
-			// 이동 바인딩
-			if (PlayerController->MoveFlyAction)
-			{
-				EnhancedInput->BindAction(
-					PlayerController->MoveFlyAction,
-					ETriggerEvent::Triggered,
-					this,
-					&ADronePawn::Move
-				);
-			}
+		EnhancedInput->BindAction(
+			PlayerController->MoveFlyAction,
+			ETriggerEvent::Triggered,
+			this,
+			&ADronePawn::Move
+		);
+	}
 
-			// 회전 바인딩
-			if (PlayerController->LookFlyAction)
-			{
-				EnhancedInput->BindAction(
-					PlayerController->LookFlyAction,
-					ETriggerEvent::Triggered,
-					this,
-					&ADronePawn::Look
-				);
-			}
-		}
+	// 회전 바인딩
+	if (PlayerController->LookFlyAction)
+	{
+		EnhancedInput->BindAction(
+			PlayerController->LookFlyAction,
+			ETriggerEvent::Triggered,
+			this,
+			&ADronePawn::Look
+		);
 	}
 }
 
@@ -101,10 +91,7 @@ void ADronePawn::UpdateGravity(float DeltaTime)
 
 void ADronePawn::Move(const FInputActionValue& Value)
 {
-	AddVelocity = Value.Get<FVector>().GetSafeNormal() * MoveSpeed;
-
-	// 월드 좌표계로 변환
-	AddVelocity = GetWorldVelocity(AddVelocity);
+	Super::Move(Value);
 
 	TiltDirection = Value.Get<FVector>().GetSafeNormal();
 }

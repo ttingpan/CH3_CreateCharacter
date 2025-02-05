@@ -16,8 +16,9 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
 	// 키 바인딩
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void SetupInputBinding(UEnhancedInputComponent* EnhancedInput, AMainPlayerController* PlayerController) override;
 
 	// 로컬 속도를 월드 속도로 변환하여 반환
 	virtual FVector GetWorldVelocity(FVector InVelocity = FVector::ZeroVector) override;

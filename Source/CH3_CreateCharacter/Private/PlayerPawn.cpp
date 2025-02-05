@@ -32,6 +32,7 @@ APlayerPawn::APlayerPawn()
 	MaxAirControlMultiplier = 0.5f;
 
 	// 달리기
+	NormalSpeed = 300.0f;
 	SprintSpeedMultiplier = 1.5f;
 	SprintSpeed = 0.0f;
 }
