@@ -80,6 +80,8 @@ SkeletalMeshComp->SetSimulatePhysics(false);
 ```
 - 각 콜리전 또한 `No Collision`으로 설정해준다.
 
+---
+
 ### **Enhanced Input 매핑 & 바인딩**
 
 - 컨트롤러와, Input Mapping Context(IMC) 등은 공통으로 사용한다.
@@ -194,6 +196,8 @@ void ADronePawn::SetupInputBinding(UEnhancedInputComponent* EnhancedInput, AMain
 
 </details>
 
+---
+
 ### **이동 / 회전 로직 구현 (캐릭터 / 드론)**
 
 - **충돌 감지**
@@ -205,40 +209,126 @@ void ADronePawn::SetupInputBinding(UEnhancedInputComponent* EnhancedInput, AMain
   - `AMainPawn::UpdateMove` 함수로 저장한 값을 기반으로 실제로 이동하는 로직을 구현한다.
       - 캐릭터와 드론 각 클래스에서 실제 이동 로직을 구현한다.
           > 캐릭터의 점프는 `APlayerPawn::Jump`로, 달리기는 `APlayerPawn::StartSprint` 및 `APlayerPawn::StopSprint`로 값을 저장하고 `AMainPawn::UpdateMove`에서 사용한다.
+
+- **캐릭터 이동 코드 예시**
+
+<details>
+<summary>AMainPawn::Move</summary>
+
 ```cpp
 
-void ADronePawn::SetupInputBinding(UEnhancedInputComponent* EnhancedInput, AMainPlayerController* PlayerController)
+void AMainPawn::Move(const FInputActionValue& Value)
 {
-	// 이동 바인딩
-	if (PlayerController->MoveFlyAction)
-	{
-		EnhancedInput->BindAction(
-			PlayerController->MoveFlyAction,
-			ETriggerEvent::Triggered,
-			this,
-			&ADronePawn::Move
-		);
-	}
+	AddVelocity = Value.Get<FVector>().GetSafeNormal() * MoveSpeed;
 
-	// 회전 바인딩
-	if (PlayerController->LookFlyAction)
+	// 월드 좌표계로 변환
+	AddVelocity = GetWorldVelocity(AddVelocity);
+}
+
+```
+ 
+</details>
+
+<details>
+<summary>APlayerPawn::Move</summary>
+
+```cpp
+
+void APlayerPawn::Move(const FInputActionValue& Value)
+{
+	Super::Move(Value);
+
+	// 바닥이 아닐 경우
+	if (!IsGround())
 	{
-		EnhancedInput->BindAction(
-			PlayerController->LookFlyAction,
-			ETriggerEvent::Triggered,
-			this,
-			&ADronePawn::Look
-		);
+		FVector2D MoveDirection = FVector2D(GetWorldVelocity(Value.Get<FVector>().GetSafeNormal()));
+
+		// 두 방향 내적해서 얼마나 차이나는지 확인
+		float Scalar = FVector2D::DotProduct(JumpStartDirection, MoveDirection);
+
+		Scalar = FMath::Clamp(Scalar, MaxAirControlMultiplier, 1.0f);
+
+		AddVelocity *= Scalar;
+	}
+	else
+	{
+		JumpStartDirection = FVector2D::ZeroVector;
 	}
 }
 
 ```
+ 
+</details>
 
+<details>
+<summary>APlayerPawn::UpdateMove</summary>
+
+```cpp
+
+void APlayerPawn::UpdateMove(float DeltaTime)
+{
+	// 바닥 여부 확인
+	UpdateIsGround();
+
+	// 바닥이면 현재 Z축 속도 제거
+	if (IsGround())
+	{
+		Velocity.Z = 0.0f;
+	}
+
+	Velocity += AddVelocity * DeltaTime;
+
+	FVector TargetLocation = GetActorLocation() + Velocity;
+
+	if (bShowDebugDrawing)
+	{
+		DrawDebugCapsule(GetWorld(), TargetLocation, MyCollision.GetCapsuleHalfHeight(), MyCollision.GetSphereRadius(), FQuat::Identity, FColor::Green, false, 0.5f);
+	}
+
+	bool bIsHit = GetWorld()->SweepMultiByChannel(OutHits, GetActorLocation(), TargetLocation, FQuat::Identity, ECC_WorldStatic, MyCollision, QueryParams);
+
+	if (bIsHit)
+	{
+		// 충돌 면과 내적 계산
+		for (const auto& Hit : OutHits)
+		{
+			auto HitDirection = Hit.ImpactNormal;
+
+			// 내적 계산해서 Velocity에 반영
+			float Scalar = FVector::DotProduct(Velocity, HitDirection);
+
+			Velocity -= Scalar * HitDirection;
+		}
+	}
+
+	if (!Velocity.IsNearlyZero())
+	{
+		CurrentSpeed = MoveSpeed;
+	}
+	else
+	{
+		CurrentSpeed = 0.0f;
+	}
+
+	// 이동
+	AddActorWorldOffset(Velocity);
+
+	AddVelocity = FVector::ZeroVector;
+	Velocity = FVector(0, 0, Velocity.Z);
+}
+
+```
+ 
+</details>
+
+---
 
 - 회전
   - `AMainPawn::Look` 함수로 입력을 받고 입력 값을 저장한다.
   - `AMainPawn::UpdateLook` 함수로 저장한 값을 기반으로 실제로 회전하는 로직을 구현한다.
       - 캐릭터와 드론 각 클래스에서 실제 회전 로직을 구현한다.
+
+---
 
 ### **중력 및 낙하**
 
