@@ -58,44 +58,194 @@
 
 ---
 ---
-## **필수 과제**
+## **구현 해야할 내용**
 
-- **필수 과제 1번 - C++ Pawn 클래스와 충돌 컴포넌트 구성**
+### **충돌 컴포넌트 구성**
 
-  - `CapsuleComponent`를 `RootComponent`로 만들고 `SkeletalMeshComponent`,`SpringArmComponent`, `CameraComponent`를 부착(`Attach`) 했다.
-  - `CapsuleComponent`와 `SkeletalMeshComponent`의 `SetSimulatePhysics(false)`를 호출하여 물리 시뮬레이션을 비활성화 했다.
-
-- **필수 과제 2번 - Enhanced Input 매핑 & 바인딩**
-
-  - 캐릭터 이동
-  - `IA_Move` : `WASD`로 입력 받고 축과 입력 방향에 맞춰 모디파이어를 추가 했다.
+- 캐릭터와 드론을 구현해야 하고 공통적인 부분이 많아서 상위 부모 클래스 `AMainPanw`클래스를 만들었다.
+- 공통으로 가지는 컴포넌트는 `MainPawn`클래스 에서 선언 해주고 각 하위 클래스에서 구현한다.
+    - 공통 컴포넌트 : `SpringArmComponent`, `CameraComponent`
+    - 캐릭터(`APlayerPawn`) : `CapusleComponent`, `SkeletalComponent`
+    - 드론(`ADronePawn`) : `BoxComponent`, `StaticMeshComponent`
   
-  ![image](https://github.com/user-attachments/assets/40809d9b-fc98-48c6-9c07-c2ea4fc2afe4)
+- 공통으로 충돌 컴포넌트의 물리 시뮬레이션을 비활성화 해준다.
+```cpp
 
-  - `StartMove` : 입력받은 값을 정규화 하여 진행 방향을 얻는다
-  - **MainPawn.cpp**
-  ```cpp
-  
-  void AMainPawn::StartMove(const FInputActionValue& Value)
-  {
-    // 컨트롤러가 없으면 방향 계산 못함
-    if (!Controller)
+// 이동을 직접 코드로 제어하기 위해 물리 시뮬레이션 비활성화
+CapsuleComp->SetSimulatePhysics(false);
+
+// 이동을 직접 코드로 제어하기 위해 물리 시뮬레이션 비활성화
+SkeletalMeshComp->SetSimulatePhysics(false);
+
+```
+- 각 콜리전 또한 `No Collision`으로 설정해준다.
+
+### **Enhanced Input 매핑 & 바인딩**
+
+- 컨트롤러와, Input Mapping Context(IMC) 등은 공통으로 사용한다.
+- 캐릭터와 드론의 이동과 회전의 작동 방식이 다르기 때문에 Input Action은 각각 만들어 준다.
+
+![image](https://github.com/user-attachments/assets/e86aa0ec-ef24-4c05-aaf4-cd494a4e9a5e)
+
+- 캐릭터
+    - `IA_Move` : 값 타입을 `Axis2D(Vector2D)`로 설정하고 `X축`은 `W`와 `S`로, `Y축`은 `A`와 `D`로 매핑한다.
+    - `IA_Look` : 값 타입을 `Axis2D(Vector2D)`로 설정하고 `마우스 XY축`으로 매핑한다.
+    - `IA_Jump` : 값 타입을 `Digital(bool)`로 설정하고 `스페이스바`로 매핑한다.
+    - `IA_Sprint` : 값 타입을 `Digital(bool)`로 설정하고 `왼쪽 Shift`로 매핑한다.
+
+<details>
+<summary>캐릭터 이동 바인딩</summary>
+
+```cpp
+
+void APlayerPawn::SetupInputBinding(UEnhancedInputComponent* EnhancedInput, AMainPlayerController* PlayerController)
+{
+    // 이동 바인딩
+    if (PlayerController->MoveAction)
     {
-      return;
+        EnhancedInput->BindAction(
+            PlayerController->MoveAction,
+            ETriggerEvent::Triggered,
+            this,
+            &APlayerPawn::Move
+        );
     }
-  
-    MoveDirection = Value.Get<FVector>().GetSafeNormal();
-  }
-  
-  ```
+
+    // 회전 바인딩
+    if (PlayerController->LookAction)
+    {
+        EnhancedInput->BindAction(
+            PlayerController->LookAction,
+            ETriggerEvent::Triggered,
+            this,
+            &APlayerPawn::Look
+        );
+    }
+
+    // 점프 바인딩
+    if (PlayerController->JumpAction)
+    {
+        EnhancedInput->BindAction(
+            PlayerController->JumpAction,
+            ETriggerEvent::Triggered,
+            this,
+            &APlayerPawn::Jump
+        );
+    }
+
+    // 달리기 바인딩
+    if (PlayerController->SprintAction)
+    {
+        EnhancedInput->BindAction(
+            PlayerController->SprintAction,
+            ETriggerEvent::Triggered,
+            this,
+            &APlayerPawn::StartSprint
+        );
+
+        EnhancedInput->BindAction(
+            PlayerController->SprintAction,
+            ETriggerEvent::Completed,
+            this,
+            &APlayerPawn::StopSprint
+        );
+    }
+}
+
+```
+    
+</details>
+
+- 드론
+    - `IA_Move_Fly` : 값 타입을 `Axis3D(Vector)`로 설정하고 `X축`은 `W`와 `S`로, `Y축`은 `A`와 `D`로, `Z축`은 `왼쪽 Shift`와 `스페이스바`로 매핑한다.
+    - `IA_Look_Fly` : 값 타입을 `Axis3D(Vector)`로 설정하고 `마우스 XY축`으로, `Z축`은 `Q`와 `E`로 매핑한다.
+
+<details>
+<summary>드론 이동 바인딩</summary>
+    
+```cpp
+
+void ADronePawn::SetupInputBinding(UEnhancedInputComponent* EnhancedInput, AMainPlayerController* PlayerController)
+{
+	// 이동 바인딩
+	if (PlayerController->MoveFlyAction)
+	{
+		EnhancedInput->BindAction(
+			PlayerController->MoveFlyAction,
+			ETriggerEvent::Triggered,
+			this,
+			&ADronePawn::Move
+		);
+	}
+
+	// 회전 바인딩
+	if (PlayerController->LookFlyAction)
+	{
+		EnhancedInput->BindAction(
+			PlayerController->LookFlyAction,
+			ETriggerEvent::Triggered,
+			this,
+			&ADronePawn::Look
+		);
+	}
+}
+
+```
+
+</details>
+
+### **이동 / 회전 로직 구현 (캐릭터 / 드론)**
+
+- **충돌 감지**
+  - 물리 시뮬레이션 및 콜리전이 비활성화 되어있기 때문에 `UWorld::SweepSingleByChannel`과 `UWorld::SweepSingleByChannel`를 활용하여 충돌을 감지했다.
+  - 해당 `Sweep`의 결과에서 충돌한 면의 방향 벡터를 가져와서 내적을 통해 이동 및 회전에 활용 했다.
+
+- 이동
+  - `AMainPawn::Move` 함수로 입력을 받고 입력 값을 저장한다.
+  - `AMainPawn::UpdateMove` 함수로 저장한 값을 기반으로 실제로 이동하는 로직을 구현한다.
+      - 캐릭터와 드론 각 클래스에서 실제 이동 로직을 구현한다.
+          > 캐릭터의 점프는 `APlayerPawn::Jump`로, 달리기는 `APlayerPawn::StartSprint` 및 `APlayerPawn::StopSprint`로 값을 저장하고 `AMainPawn::UpdateMove`에서 사용한다.
+```cpp
+
+void ADronePawn::SetupInputBinding(UEnhancedInputComponent* EnhancedInput, AMainPlayerController* PlayerController)
+{
+	// 이동 바인딩
+	if (PlayerController->MoveFlyAction)
+	{
+		EnhancedInput->BindAction(
+			PlayerController->MoveFlyAction,
+			ETriggerEvent::Triggered,
+			this,
+			&ADronePawn::Move
+		);
+	}
+
+	// 회전 바인딩
+	if (PlayerController->LookFlyAction)
+	{
+		EnhancedInput->BindAction(
+			PlayerController->LookFlyAction,
+			ETriggerEvent::Triggered,
+			this,
+			&ADronePawn::Look
+		);
+	}
+}
+
+```
 
 
-  - `StopMove` : 입력이 없으면 
+- 회전
+  - `AMainPawn::Look` 함수로 입력을 받고 입력 값을 저장한다.
+  - `AMainPawn::UpdateLook` 함수로 저장한 값을 기반으로 실제로 회전하는 로직을 구현한다.
+      - 캐릭터와 드론 각 클래스에서 실제 회전 로직을 구현한다.
 
-  - 카메라 및 캐릭터 회전
-  - `IA_Look` : `마우스 XY 2D 축`을 입력 받고 별도의 모디파이어는 추가하지 않았다.
+### **중력 및 낙하**
 
-
+- `AMainPawn::UpdateGravity` 함수로 지속적으로 중력을 적용하고 필요시 재정의 하여 사용한다.
+- 캐릭터의 경우 `Sweep`을 사용하여 별도로 바닥을 감지한다.
+  > 드론의 경우 회전 및 기울임에 따라 자동으로 `이동` 하는 형태로 작동하기 때문에 `이동`에서 충돌을 감지하여 별도로 바닥을 감지 할 필요는 없다.
+- 캐릭터의 경우 공중 이동 배율을 설정하고 적용하여 처음 점프했을 방향과 다른 방향으로 이동시 점차 감소된 이동속도로 이동 하도록 했다.
 
 
 
